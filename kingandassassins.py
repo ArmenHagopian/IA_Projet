@@ -3,6 +3,7 @@
 # Author: Sébastien Combéfis
 # Version: April 29, 2016
 from math import sqrt
+from test import knightaction, kingaction, kingcoord
 import argparse
 import json
 import random
@@ -286,7 +287,7 @@ class KingAndAssassinsClient(game.GameClient):
 
     def __init__(self, name, server, verbose=False):
         self.__name = name
-        self._turn = -3
+        self._turn = -1
         super().__init__(server, KingAndAssassinsState, verbose=verbose)
 
 
@@ -311,10 +312,16 @@ class KingAndAssassinsClient(game.GameClient):
         card = state['card']
         action = []
         self._turn += 1
+        kingpos = kingcoord(state)
+
         if state['card'] is None:
             #instance de la classe, on le declare une fois car sinon refait random a chaque tour
             self._random_assassins = random.sample(POPULATION, 3)
             return json.dumps({'assassins': self._random_assassins}, separators=(',', ':'))
+        # for knightx in range(10):
+        #     for knighty in range(10):
+        #         if state['people'][knightx][knighty] == 'knight':
+        #             return json.dumps({'actions':position()}, separators=(',', ':'))
         else:
             # si = 0, on est le roi
             print('test', self._playernb)
@@ -337,12 +344,14 @@ class KingAndAssassinsClient(game.GameClient):
                 print('test4')
                 return json.dumps({'actions': []}, separators=(',', ':'))
             else:
+                #partie 4 mais passe à la 5 car pas le tour de player 1, mais de player 0
+
                 if self._turn == 2:
                     return json.dumps({'actions': [('move', 1, 3, 'N')]}, separators=(',', ':'))
-                for i in range(10):
-                    for j in range(10):
-                        if state['people'][i][j] in KNIGHTS:
-                            return
+                elif self._turn == 4:
+                    print('nonononononononononononono')
+                    # print(knightaction(kingpos, (0, 3), state['card'], 0))
+                    return json.dumps({'actions': knightaction((9, 9), (8, 9), state['card'], 0)}, separators=(',', ':'))
                 return json.dumps({'actions': []}, separators=(',', ':'))
 
     # sqrt(x**2 + y**2)
