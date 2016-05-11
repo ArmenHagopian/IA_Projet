@@ -3,7 +3,7 @@
 # Author: Sébastien Combéfis
 # Version: April 29, 2016
 from math import sqrt
-from test import knightaction, kingaction, kingcoord
+from test import knightaction, kingaction, kingcoord, nearest_knight, upside_knight
 import argparse
 import json
 import random
@@ -324,10 +324,7 @@ class KingAndAssassinsClient(game.GameClient):
         #             return json.dumps({'actions':position()}, separators=(',', ':'))
         else:
             # si = 0, on est le roi
-            print('test', self._playernb)
             if self._playernb == 0:
-                print('test2')
-                print(self._random_assassins)
                 # if self._i == 1:
                 #     action = ('move', '1', '7', 'N')
                 # for i in range(10):
@@ -341,17 +338,29 @@ class KingAndAssassinsClient(game.GameClient):
                 #             if state['people'][i][j] == self._random_assassins[0]:
                 #
                 #                 return json.dumps({'actions': [('move', i, j, 'N')]}, separators=(',', ':'))
-                print('test4')
                 return json.dumps({'actions': []}, separators=(',', ':'))
             else:
-                #partie 4 mais passe à la 5 car pas le tour de player 1, mais de player 0
+                #self._turn = 2 veut dire partie 4 mais passe à la 5 car pas le tour de player 1, mais de player 0
 
                 if self._turn == 2:
                     return json.dumps({'actions': [('move', 1, 3, 'N')]}, separators=(',', ':'))
                 elif self._turn == 4:
-                    print('nonononononononononononono')
                     # print(knightaction(kingpos, (0, 3), state['card'], 0))
-                    return json.dumps({'actions': knightaction((9, 9), (8, 9), state['card'], 0)}, separators=(',', ':'))
+                    while state['card'][1] > 0:
+                        #on fait avancer le chevalier devant le roi
+                        if len(upside_knight(state, kingpos)) > 0:
+                            action.append(upside_knight(state, kingpos))
+                            state['card'][1] -= 1
+                        for knightx in range(10):
+                            for knighty in range(10):
+                                allknightactions = knightaction(kingpos, (knightx, knighty), state['card'], 0)[0]
+                                if state['people'][knightx][knighty] == 'knight' and len(allknightactions)>0:
+                                    for i in range(len(allknightactions)):
+                                        action.append(allknightactions[i])
+                                    state['card'][1] = knightaction(kingpos, (knightx, knighty), state['card'], 0)[1]
+                    return json.dumps({'actions': action}, separators=(',', ':'))
+
+                    return json.dumps({'actions': knightaction((9, 9), (8, 9), state['card'], 0)[0]}, separators=(',', ':'))
                 return json.dumps({'actions': []}, separators=(',', ':'))
 
     # sqrt(x**2 + y**2)
