@@ -2,7 +2,7 @@
 # kingandassassins.py
 # Author: Sébastien Combéfis
 # Version: April 29, 2016
-
+from math import sqrt
 import argparse
 import json
 import random
@@ -286,7 +286,7 @@ class KingAndAssassinsClient(game.GameClient):
 
     def __init__(self, name, server, verbose=False):
         self.__name = name
-        self._i = -1
+        self._turn = -3
         super().__init__(server, KingAndAssassinsState, verbose=verbose)
 
 
@@ -305,9 +305,12 @@ class KingAndAssassinsClient(game.GameClient):
         #   ('attack', x, y, dir): attacks the king in direction dir with assassin at position (x, y)
         #   ('reveal', x, y): reveals villager at position (x,y) as an assassin
         state = state._state['visible']
+        people = state['people']
+        p = people[9][9]
         # state['card'] : premier joueur n'a pas défini les assassins
+        card = state['card']
         action = []
-        self._i += 1
+        self._turn += 1
         if state['card'] is None:
             #instance de la classe, on le declare une fois car sinon refait random a chaque tour
             self._random_assassins = random.sample(POPULATION, 3)
@@ -334,9 +337,15 @@ class KingAndAssassinsClient(game.GameClient):
                 print('test4')
                 return json.dumps({'actions': []}, separators=(',', ':'))
             else:
-                if self._i == 4:
+                if self._turn == 2:
                     return json.dumps({'actions': [('move', 1, 3, 'N')]}, separators=(',', ':'))
+                for i in range(10):
+                    for j in range(10):
+                        if state['people'][i][j] in KNIGHTS:
+                            return
                 return json.dumps({'actions': []}, separators=(',', ':'))
+
+    # sqrt(x**2 + y**2)
                 # return json.dumps({'actions': []}, separators=(',', ':'))
 #recuperer coordonnees de tous les chevaliers et avancer avec chevaliers proches du roi
 
