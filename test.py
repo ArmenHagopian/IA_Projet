@@ -21,19 +21,21 @@ def kingaction(kingpos, knightpos, card, peoplepos):
     # on fait avancer le roi d'abord tout droit puis à gauche pour qu'il atteigne le but
     while kingpos[0] != 2 and kingpos[1] != 2 and kingAP > 0:
     # if kingpos != (2, 2):
-        if kingpos[1] < 2:
+        if kingpos[0] > 2:
             kingaction.append(('move', kingpos[0], kingpos[1], 'N'))
+            kingpos = (kingpos[0], kingpos[1]-1)
+            kingAP -= 1
+        elif kingpos[1] > 2:
+            kingaction.append(('move', kingpos[0], kingpos[1], 'W'))
             #remet la nouvelle position après l'avoir deplace vers le nord
             kingpos = (kingpos[0]-1, kingpos[1])
-        elif kingpos[0] > 2:
-            kingaction.append(('move', kingpos[0], kingpos[1], 'W'))
-            kingpos = (kingpos[0], kingpos[1]-1)
-
-        kingAP -= 1
+            kingAP -= 1
+    return kingaction
 
 
-#on bouge les chevaliers pour qu'ils entourent le roi, on continue tant qu'ils ne sont pas autour
-def knightaction(kingpos, knightpos, card, peoplepos):
+
+#on bouge les chevaliers pour qu'ils entourent le roi, on continue tant qu'ils ne sont pas autour et qu'il y a assez d'AP
+def knightaction(kingpos, knightpos, card, state, PEOPLE):
     knightaction = list()
     knightAP = card[1]
     # while knightAP > 0 and knightpos[1]<10 and knightpos[0]<10:
@@ -43,6 +45,26 @@ def knightaction(kingpos, knightpos, card, peoplepos):
         # knightpos = (knightpos[0]-1, knightpos[1])
         # knightAP -= 1
     if knightpos != (kingpos[0]-1, kingpos[1]):
+        while knightAP > 0:
+            for peoplex in range(10):
+                for peopley in range(10):
+                    if state['people'][peoplex][peopley] in PEOPLE and knightAP > 0:
+                        if knightpos[0]-peoplex == 1:
+                            knightaction.append(('arrest', knightpos[0], knightpos[1], 'N'))
+                            knightpos = (knightpos[0]-1, knightpos[1])
+                            knightAP -= 1
+                        elif knightpos[0]-peoplex == -1:
+                            knightaction.append(('arrest', knightpos[0], knightpos[1], 'S'))
+                            knightpos = (knightpos[0]+1, knightpos[1])
+                            knightAP -= 1
+                        elif knightpos[1]-peopley == 1:
+                            knightaction.append(('arrest', knightpos[0], knightpos[1], 'W'))
+                            knightpos = (knightpos[0], knightpos[1]-1)
+                            knightAP -= 1
+                        elif knightpos[1]-peopley == -1:
+                            knightaction.append(('arrest', knightpos[0], knightpos[1], 'E'))
+                            knightpos = (knightpos[0], knightpos[1]+1)
+                            knightAP -= 1
 
         while (knightpos != (kingpos[0]-1, kingpos[1]) and knightAP > 0) and (knightpos != (kingpos[0]+1, kingpos[1]) and knightAP > 0) and (knightpos != (kingpos[0], kingpos[1]+1) and knightAP > 0) and (knightpos != (kingpos[0], kingpos[1]-1) and knightAP > 0):
 
@@ -69,6 +91,20 @@ def knightaction(kingpos, knightpos, card, peoplepos):
     return (knightaction, knightAP)
 
 
+def aroundknight(state, PEOPLE, knightpos):
+        action = []
+        for peoplex in range(10):
+            for peopley in range(10):
+                if state['people'][peoplex][peopley] in PEOPLE:
+                    if knightpos[0]-peoplex == 1:
+                        action.append(('arrest', knightpos[0], knightpos[1], 'N'))
+                    elif knightpos[0]-peoplex == -1:
+                        action.append(('arrest', knightpos[0], knightpos[1], 'S'))
+                    elif knightpos[1]-peoplex == 1:
+                        action.append(('arrest', knightpos[0], knightpos[1], 'W'))
+                    elif knightpos[1]-peoplex == -1:
+                        action.append(('arrest', knightpos[0], knightpos[1], 'E'))
+        return action
 #on fait avencer le chevalier devant le roi pour laisser la voie libre au roi
 def upside_knight(state, kingpos):
     for knightx in range(10):

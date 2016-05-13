@@ -102,8 +102,21 @@ class KingAndAssassinsState(game.GameState):
     def __init__(self, initialstate=KA_INITIAL_STATE):
         super().__init__(initialstate)
 
-    def _nextfree(self, x, y, dir):
-        nx, ny = self._getcoord((x, y, dir))
+    def _nextfree(self, x, y, d):
+        people = self._state['visible']['people']
+        nx, ny = self._getcoord((x, y, d))
+        ix, iy = nx, ny
+        while 0 <= ix <= 9 and 0 <= iy <= 9 and people[ix][iy] is not None:
+            # Must be a villager
+            if people[ix][iy] not in POPULATION:
+                return None
+            # Cannot be a roof
+            if (ix, iy) != (nx, ny) and BOARD[ix][iy] == 'R':
+                return None
+            ix, iy = self._getcoord((ix, iy, d))
+        if 0 <= ix <= 9 and 0 <= iy <= 9:
+            return (ix, iy)
+        return None
 
     def update(self, moves, player):
         visible = self._state['visible']
@@ -133,8 +146,14 @@ class KingAndAssassinsState(game.GameState):
                     people[x][y], people[nx][ny] = people[nx][ny], people[x][y]
                 # If cell is not free, check if the knight can push villagers
                 else:
-                    pass
-            # ('arrest', x, y, dir): arrests the villager in direction dir with knight at position (x, y)
+                    nf = self._nextfree(x, y, d)
+                    if nf is None:
+                        raise game.InvalidMoveException('{}: cannot move-and-push in the given direction'.format(move))
+                    nfx, nfy = nf
+                    while (nfx, nfy) != (x, y):
+                        px, py = self._getcoord((nfx, nfx, {'E': 'W', 'W': 'E', 'S': 'N', 'N': 'S'}[d]))
+                        people[nfx][nfy] = people[px][py]
+                        nfx, nfy = px, py            # ('arrest', x, y, dir): arrests the villager in direction dir with knight at position (x, y)
             elif move[0] == 'arrest':
                 if player != 1:
                     raise game.InvalidMoveException('arrest action only possible for player 1')
@@ -342,22 +361,23 @@ class KingAndAssassinsClient(game.GameClient):
             else:
                 #self._turn = 2 veut dire partie 4 mais passe à la 5 car pas le tour de player 1, mais de player 0
 
-                if self._turn == 2:
-                    return json.dumps({'actions': [('move', 1, 3, 'N')]}, separators=(',', ':'))
-                elif self._turn == 4:
+                # if self._turn == 2:
+                #     return json.dumps({'actions': [('move', 1, 3, 'N')]}, separators=(',', ':'))
+                if self._turn%2 != 0:
                     # print(knightaction(kingpos, (0, 3), state['card'], 0))
                     while state['card'][1] > 0:
-                        #on fait avancer le chevalier devant le roi
+                        #on fait avancer le chevalier qui est devant le roi
                         if len(upside_knight(state, kingpos)) > 0:
                             action.append(upside_knight(state, kingpos))
                             state['card'][1] -= 1
                         for knightx in range(10):
                             for knighty in range(10):
-                                allknightactions = knightaction(kingpos, (knightx, knighty), state['card'], 0)[0]
-                                if state['people'][knightx][knighty] == 'knight' and len(allknightactions)>0:
-                                    for i in range(len(allknightactions)):
-                                        action.append(allknightactions[i])
-                                    state['card'][1] = knightaction(kingpos, (knightx, knighty), state['card'], 0)[1]
+                                allknightactions = knightaction(kingpos, (knightx, knighty), state['card'], state, POPULATION)
+                                if state['people'][knightx][knighty] == 'knight' and len(allknightactions[0])>0:
+                                    for i in range(len(allknightactions[0])):
+                                        action.append(allknightactions[0][i])
+                                    state['card'][1] = allknightactions[1]
+                        action.append(kingaction(kingpos, 0, state['card'], 0))
                     return json.dumps({'actions': action}, separators=(',', ':'))
 
                     return json.dumps({'actions': knightaction((9, 9), (8, 9), state['card'], 0)[0]}, separators=(',', ':'))
