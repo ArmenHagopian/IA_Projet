@@ -3,7 +3,7 @@
 # Author: Sébastien Combéfis
 # Version: April 29, 2016
 from math import sqrt
-from test import knightaction, kingaction, kingcoord, nearest_knight, upside_knight
+from functions import knightaction, kingaction, kingcoord, nearest_knight, upside_knight
 import argparse
 import json
 import random
